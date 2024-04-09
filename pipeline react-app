@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage("checkout code") {
+            steps {
+                git branch: 'main', url: 'https://github.com/shubhamgarud64/dashboard.git'
+            }
+        }
+        stage('Build the image') {
+            steps {
+                script {
+                    sh "docker build -t react-app ."
+                }
+            }
+        }
+        stage('publish to dockerhub') {
+            steps {
+                script {
+                    def dockerHubCredentialId = 'docker-cred'
+                    def dockerImageName = "shubham7890/react-app:${BUILD_NUMBER}"
+                    
+                    withCredentials([usernamePassword(credentialsId: dockerHubCredentialId, passwordVariable: 'DOCKERHUB_PASSWORD', usernameVariable: 'DOCKERHUB_USERNAME')]) {
+                        sh """
+                        docker login -u \${DOCKER_USERNAME} -p \${DOCKER_PASSWORD}
+                        docker tag react-app shubham7890/react-app:\${BUILD_NUMBER}
+                        docker push ${dockerImageName}
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
